@@ -1,0 +1,110 @@
+# cases.yaml — scoring keys for the eval suite.
+# A harness reads this; do not show `expected_findings` to the agent under test.
+# Each case: id, mode, file (the human-readable case), primary_dimension,
+# expected_findings (rule ids the agent should raise; severity noted), and
+# expected_finding_count for false-positive control.
+#
+# modes: check | correct | author | review
+
+suite: architecture-description-style-guide
+dimensions: [vocabulary, voice, normative, conformance, expression]
+
+cases:
+  - id: "01-deprecated-terms"
+    file: cases/01-deprecated-terms.md
+    mode: correct
+    primary_dimension: vocabulary
+    expected_findings:
+      - { rule: AD-VOC-001, severity: error, note: "system of interest -> entity of interest" }
+      - { rule: AD-VOC-001, severity: error, note: "architecture model -> view component" }
+      - { rule: AD-VOC-001, severity: error, note: "correspondence rule -> correspondence method" }
+      - { rule: AD-VOC-001, severity: error, note: "architecture framework -> ADF" }
+    min_error_findings: 4
+
+  - id: "02-normative-force"
+    file: cases/02-normative-force.md
+    mode: correct
+    primary_dimension: normative
+    expected_findings:
+      - { rule: AD-NORM-001, severity: error, note: "'must authenticate' -> 'shall'" }
+      - { rule: AD-NORM-001, severity: error, note: "'need to' -> 'shall' or fact" }
+      - { rule: AD-NORM-002, severity: error, note: "'shall ideally' -> 'should'" }
+      - { rule: AD-NORM-003, severity: warning, note: "'it is critical that' is not obligation" }
+    min_error_findings: 3
+
+  - id: "03-voice-person"
+    file: cases/03-voice-person.md
+    mode: correct
+    primary_dimension: voice
+    expected_findings:
+      - { rule: AD-VOICE-001, severity: error, note: "'we chose' -> impersonal/decision record" }
+      - { rule: AD-VOICE-002, severity: error, note: "'you can see' -> third person" }
+      - { rule: AD-VOICE-003, severity: warning, note: "'this section was generated' -> delete self-reference" }
+    min_error_findings: 2
+
+  - id: "04-view-vs-viewpoint"
+    file: cases/04-view-vs-viewpoint.md
+    mode: check
+    primary_dimension: vocabulary
+    expected_findings:
+      - { rule: AD-VOC-002, severity: warning, note: "'security view defines conventions' -> that is a viewpoint" }
+      - { rule: AD-VOC-002, severity: warning, note: "'apply the deployment viewpoint to this system' as result -> that is a view" }
+    min_error_findings: 0
+
+  - id: "05-register-hype"
+    file: cases/05-register-hype.md
+    mode: correct
+    primary_dimension: expression
+    expected_findings:
+      - { rule: AD-REG-001, severity: warning, note: "robust / world-class / seamless" }
+      - { rule: AD-REG-002, severity: warning, note: "very / really / obviously" }
+      - { rule: AD-REG-003, severity: warning, note: "'it should be noted that' opener" }
+      - { rule: AD-REG-004, severity: info, note: "leverage / utilize -> use" }
+    min_error_findings: 0
+
+  - id: "06-agentless-passive"
+    file: cases/06-agentless-passive.md
+    mode: correct
+    primary_dimension: expression
+    expected_findings:
+      - { rule: AD-EXP-001, severity: warning, note: "'requests are authenticated' -> name the actor" }
+      - { rule: AD-EXP-005, severity: warning, note: "'the diagram above' -> reference by id" }
+      - { rule: AD-EXP-006, severity: info, note: "'high throughput' -> quantify" }
+    min_error_findings: 0
+
+  - id: "07-conformance-gaps"
+    file: cases/07-conformance-gaps.md
+    mode: check
+    primary_dimension: conformance
+    expected_findings:
+      - { rule: AD-CONF-001, severity: error, note: "no stakeholder perspectives (6.3) and no aspects (6.5)" }
+      - { rule: AD-CONF-002, severity: error, note: "concern C-05 (privacy) framed by no viewpoint" }
+      - { rule: AD-CONF-003, severity: error, note: "ADR-002 has no rationale" }
+      - { rule: AD-CONF-006, severity: warning, note: "known inconsistencies not recorded" }
+    min_error_findings: 3
+
+  - id: "08-clean-passes"
+    file: cases/08-clean-passes.md
+    mode: check
+    primary_dimension: all
+    expected_findings: []        # control: conforming text, zero findings expected
+    expected_finding_count: 0
+    min_error_findings: 0
+
+  - id: "09-author-section"
+    file: cases/09-author-section.md
+    mode: author
+    primary_dimension: all
+    expected_findings: []        # judged on rewrite axes + prose/conformance checklists
+    rewrite_axes: [correctness_preserved, output_conformance, voice_match]
+    must_flag_gaps: true         # missing facts must be marked <TO SUPPLY>, not fabricated
+
+  - id: "10-cross-document-voice"
+    file: cases/10-cross-document-voice.md
+    mode: review
+    primary_dimension: voice
+    expected_findings:
+      - { rule: null, severity: warning, note: "term drift: 'settlement engine' vs 'Settlement service' across docs" }
+      - { rule: null, severity: warning, note: "register drift: doc B overview is promotional" }
+      - { rule: null, severity: warning, note: "citation style differs between docs" }
+    verdict_scheme: review-checklist
