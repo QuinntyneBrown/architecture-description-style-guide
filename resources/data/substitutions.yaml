@@ -1,0 +1,321 @@
+# substitutions.yaml
+# Word- and phrase-level replacements an agent applies when checking or correcting AD prose.
+# Each rule: a pattern to find, the preferred replacement, a severity, and the reason.
+#
+# severity:
+#   error    -> non-conforming; must be fixed. (Deprecated 42010 terms, normative-force words.)
+#   warning  -> erodes the single voice or precision; fix unless context justifies it.
+#   info     -> stylistic preference; apply when it does not change meaning.
+#
+# match:
+#   word     -> whole-word, case-insensitive match
+#   phrase   -> case-insensitive substring/phrase match
+# Replacements are guidance; preserve meaning. Where replacement depends on intent,
+# `replace_with` is null and `action` explains the required rewrite.
+
+# ---------------------------------------------------------------------------
+# 1. Deprecated 42010 terms (2011 -> 2022). Always errors.
+# ---------------------------------------------------------------------------
+deprecated_terms:
+  - find: "system of interest"
+    match: phrase
+    replace_with: "entity of interest"
+    severity: error
+    reason: "2011 term; 2022 generalizes the subject to 'entity of interest' (3.12)."
+  - find: "systems of interest"
+    match: phrase
+    replace_with: "entities of interest"
+    severity: error
+    reason: "Plural of the deprecated term."
+  - find: "architecture framework"
+    match: phrase
+    replace_with: "architecture description framework"
+    severity: error
+    reason: "Renamed to 'architecture description framework (ADF)' (3.5) to distinguish from other architecting frameworks."
+  - find: "architecture model"
+    match: phrase
+    replace_with: "view component"
+    severity: error
+    reason: "Replaced by 'view component' (3.19); a view's parts may be model-based or not."
+  - find: "architecture models"
+    match: phrase
+    replace_with: "view components"
+    severity: error
+    reason: "Plural of the deprecated term."
+  - find: "correspondence rule"
+    match: phrase
+    replace_with: "correspondence method"
+    severity: error
+    reason: "2011 term; 2022 uses 'correspondence method' (6.9.3)."
+  - find: "correspondence rules"
+    match: phrase
+    replace_with: "correspondence methods"
+    severity: error
+    reason: "Plural of the deprecated term."
+
+# ---------------------------------------------------------------------------
+# 2. Wrong word for an AD (the document) or for a defined concept.
+# ---------------------------------------------------------------------------
+wrong_term_for_concept:
+  - find: "architecture document"
+    match: phrase
+    replace_with: "architecture description"
+    severity: error
+    reason: "The work product is an 'architecture description (AD)' (3.3), not a 'document'."
+  - find: "architecture doc"
+    match: phrase
+    replace_with: "architecture description"
+    severity: error
+    reason: "Use the defined term 'architecture description (AD)'."
+  - find: "blueprint"
+    match: word
+    replace_with: "architecture description"
+    severity: warning
+    reason: "Use the defined term when the AD or the architecture is meant."
+  - find: "design doc"
+    match: phrase
+    replace_with: "architecture description"
+    severity: warning
+    reason: "Use the defined term if the AD is meant."
+
+# ---------------------------------------------------------------------------
+# 3. Normative-force words. Requirement/recommendation/permission ride only on
+#    shall / should / may. Replacing these requires judgement: is it a requirement?
+# ---------------------------------------------------------------------------
+normative_force:
+  - find: "must"
+    match: word
+    replace_with: "shall"
+    severity: error
+    reason: "Requirements use 'shall'. 'must' is not a 42010 verbal form. (If not a requirement, rewrite as fact.)"
+  - find: "must not"
+    match: phrase
+    replace_with: "shall not"
+    severity: error
+    reason: "Prohibitions use 'shall not'."
+  - find: "need to"
+    match: phrase
+    replace_with: "shall"
+    severity: warning
+    reason: "If a requirement, use 'shall'; otherwise rewrite as a plain fact."
+  - find: "has to"
+    match: phrase
+    replace_with: "shall"
+    severity: warning
+    reason: "Use 'shall' for a requirement."
+  - find: "have to"
+    match: phrase
+    replace_with: "shall"
+    severity: warning
+    reason: "Use 'shall' for a requirement."
+  - find: "is required to"
+    match: phrase
+    replace_with: "shall"
+    severity: warning
+    reason: "Use 'shall' for a requirement."
+  - find: "shall ideally"
+    match: phrase
+    replace_with: "should"
+    severity: error
+    reason: "A diluted requirement is a recommendation: use 'should'."
+  - find: "should always"
+    match: phrase
+    replace_with: null
+    action: "If it is a requirement, use 'shall'; otherwise use 'should' without 'always'."
+    severity: warning
+    reason: "Do not dilute or inflate normative force with adverbs."
+  - find: "must absolutely"
+    match: phrase
+    replace_with: "shall"
+    severity: error
+    reason: "Use 'shall'; drop the intensifier."
+
+# ---------------------------------------------------------------------------
+# 4. Voice violations: first/second person and tool self-reference.
+# ---------------------------------------------------------------------------
+voice:
+  - find: "we"
+    match: word
+    replace_with: null
+    action: "Remove first person. Recast as a statement about the architecture, or record as a decision (6.10)."
+    severity: error
+    reason: "An AD is spoken by the description, impersonally; no first person."
+  - find: "our"
+    match: word
+    replace_with: null
+    action: "Remove first person; name the AD element or EoI instead."
+    severity: error
+    reason: "No first person in an AD."
+  - find: "I "
+    match: phrase
+    replace_with: null
+    action: "Remove first person."
+    severity: error
+    reason: "No first person in an AD."
+  - find: "you"
+    match: word
+    replace_with: null
+    action: "Do not address the reader; state the fact in the third person."
+    severity: error
+    reason: "An AD does not address the reader as 'you'."
+  - find: "your"
+    match: word
+    replace_with: null
+    action: "Do not address the reader."
+    severity: error
+    reason: "No second person in an AD."
+  - find: "as we can see"
+    match: phrase
+    replace_with: null
+    action: "Delete; state the observation directly."
+    severity: error
+    reason: "First person and reader-address; empty opener."
+  - find: "this document will now"
+    match: phrase
+    replace_with: null
+    action: "Delete self-reference; state the content directly."
+    severity: warning
+    reason: "An AD does not narrate its own production."
+
+# ---------------------------------------------------------------------------
+# 5. Hype, intensifiers, hedges, fillers. Warnings; they erode the single voice.
+# ---------------------------------------------------------------------------
+register:
+  - find: "leverage"
+    match: word
+    replace_with: "use"
+    severity: warning
+    reason: "Plain register; 'leverage' is hype."
+  - find: "utilize"
+    match: word
+    replace_with: "use"
+    severity: warning
+    reason: "Use the plain word."
+  - find: "facilitate"
+    match: word
+    replace_with: "allow"
+    severity: info
+    reason: "Prefer a concrete verb."
+  - find: "in order to"
+    match: phrase
+    replace_with: "to"
+    severity: info
+    reason: "Concise."
+  - find: "due to the fact that"
+    match: phrase
+    replace_with: "because"
+    severity: info
+    reason: "Concise."
+  - find: "at this point in time"
+    match: phrase
+    replace_with: "now"
+    severity: info
+    reason: "Concise; or delete."
+  - find: "it should be noted that"
+    match: phrase
+    replace_with: null
+    action: "Delete the opener; state the fact."
+    severity: warning
+    reason: "Empty opener."
+  - find: "it is important to"
+    match: phrase
+    replace_with: null
+    action: "Delete; state the fact, or make it a 'shall' if it is a requirement."
+    severity: warning
+    reason: "Empty opener; importance is not normative force."
+  - find: "robust"
+    match: word
+    replace_with: null
+    action: "State the property and its evidence (e.g. tolerated failure modes, measured limits)."
+    severity: warning
+    reason: "Adjective-only quality claim with no fact behind it."
+  - find: "seamless"
+    match: word
+    replace_with: null
+    action: "Describe the actual integration behaviour."
+    severity: warning
+    reason: "Marketing word."
+  - find: "powerful"
+    match: word
+    replace_with: null
+    action: "State the capability concretely."
+    severity: warning
+    reason: "Marketing word."
+  - find: "cutting-edge"
+    match: phrase
+    replace_with: null
+    action: "Delete; describe the technology factually."
+    severity: warning
+    reason: "Marketing word."
+  - find: "world-class"
+    match: phrase
+    replace_with: null
+    action: "Delete."
+    severity: warning
+    reason: "Marketing word."
+  - find: "best-in-class"
+    match: phrase
+    replace_with: null
+    action: "Delete; give the comparison and metric if one exists."
+    severity: warning
+    reason: "Marketing word."
+  - find: "state-of-the-art"
+    match: phrase
+    replace_with: null
+    action: "Delete; describe factually."
+    severity: warning
+    reason: "Marketing word."
+  - find: "very"
+    match: word
+    replace_with: null
+    action: "Delete the intensifier; quantify if a degree is meant."
+    severity: warning
+    reason: "Vague intensifier."
+  - find: "really"
+    match: word
+    replace_with: null
+    action: "Delete."
+    severity: warning
+    reason: "Vague intensifier; conversational."
+  - find: "simply"
+    match: word
+    replace_with: null
+    action: "Delete; do not editorialize on difficulty."
+    severity: warning
+    reason: "Condescending filler."
+  - find: "obviously"
+    match: word
+    replace_with: null
+    action: "Delete."
+    severity: warning
+    reason: "Condescending filler."
+  - find: "of course"
+    match: phrase
+    replace_with: null
+    action: "Delete."
+    severity: warning
+    reason: "Conversational filler."
+  - find: "basically"
+    match: word
+    replace_with: null
+    action: "Delete; state precisely."
+    severity: warning
+    reason: "Hedge/filler."
+  - find: "essentially"
+    match: word
+    replace_with: null
+    action: "Delete; state precisely."
+    severity: warning
+    reason: "Hedge/filler."
+  - find: "arguably"
+    match: word
+    replace_with: null
+    action: "Delete; an AD commits."
+    severity: warning
+    reason: "Hedge."
+  - find: "a number of"
+    match: phrase
+    replace_with: null
+    action: "Give the count or range if knowable."
+    severity: info
+    reason: "Vague quantifier."
