@@ -27,6 +27,7 @@ maintainer *measure* how well it did.
 | Write sentences, definitions, and lists correctly | [`docs/04-expression.md`](docs/04-expression.md) |
 | Lay out a conforming AD document | [`docs/05-document-structure.md`](docs/05-document-structure.md) · [`resources/templates/`](resources/templates/) |
 | Check or correct prose as an agent | [`agents/AGENT-INSTRUCTIONS.md`](agents/AGENT-INSTRUCTIONS.md) |
+| Use it with a local model (Ollama) in a web IDE | [`docs/using-with-ollama.md`](docs/using-with-ollama.md) · [`resources/ollama/context-pack.md`](resources/ollama/context-pack.md) |
 | Run a review by hand | [`checklists/`](checklists/) |
 | Measure an agent against the guide | [`evals/`](evals/) |
 
@@ -41,16 +42,21 @@ maintainer *measure* how well it did.
 │   ├── 03-vocabulary.md            Controlled vocabulary and term-usage rules
 │   ├── 04-expression.md            Sentence, definition, list, and reference rules
 │   ├── 05-document-structure.md    How a conforming AD document is organized
-│   └── glossary.md                 Canonical term definitions with clause references
+│   ├── glossary.md                 Canonical term definitions with clause references
+│   └── using-with-ollama.md        Local-model (Ollama) + web-IDE workflow
 ├── resources/
 │   ├── data/
 │   │   ├── terminology.yaml         Machine-readable term bank
 │   │   ├── substitutions.yaml       Deprecated/forbidden → preferred replacements
 │   │   └── style-rules.yaml         Lint-style rules an agent can apply mechanically
-│   └── templates/
-│       ├── architecture-description-template.md   Clause-6 conforming AD skeleton
-│       ├── viewpoint-template.md                  Architecture viewpoint specification
-│       └── decision-record-template.md            Architecture decision + rationale
+│   ├── templates/
+│   │   ├── architecture-description-template.md   Clause-6 conforming AD skeleton
+│   │   ├── viewpoint-template.md                  Architecture viewpoint specification
+│   │   └── decision-record-template.md            Architecture decision + rationale
+│   └── ollama/                     For local models (no file access — bundle the rules)
+│       ├── context-pack.md         THE file you upload: all rules in one self-contained doc
+│       ├── system-prompt.md        Short system prompt for Open WebUI / Continue / Modelfile
+│       └── Modelfile               Build a custom "ad-style" model that knows the guide
 ├── checklists/
 │   ├── prose-checklist.md          Vocabulary, voice, and expression checks
 │   ├── conformance-checklist.md    Clause-6 required-content checks
@@ -59,7 +65,8 @@ maintainer *measure* how well it did.
 │   ├── README.md                   How the evals work and how to run them
 │   ├── rubric.md                   Scoring rubric across five dimensions
 │   ├── cases.yaml                  Index of eval cases
-│   └── cases/                      Individual cases: flawed input → reference output
+│   ├── cases/                      Individual cases: flawed input → reference output
+│   └── ollama-smoke-test.md        One-minute go/no-go for a local model
 └── agents/
     └── AGENT-INSTRUCTIONS.md        Operating instructions for a coding agent
 ```
@@ -207,6 +214,48 @@ Mode: **Review** across files.
   [`docs/glossary.md`](docs/glossary.md); the glossary and standard govern.
 - **Iterate in Correct mode** — ask the agent to re-run Check on its own output until no
   error-severity findings remain.
+
+## Using this repo with a local model (Ollama + web IDE)
+
+The setups above assume an agent that can **read this repository**. A local model run by
+[Ollama](https://ollama.com/) — driven from a web IDE like
+[Open WebUI](https://openwebui.com/) or an editor extension — **cannot**: it is a chat model
+with no file access, so it only knows what is in its context window.
+
+So the workflow is different in exactly one way: **you put the rules into the model's
+context.** This repo ships a single self-contained bundle for that —
+[`resources/ollama/context-pack.md`](resources/ollama/context-pack.md) — which flattens
+every rule, the vocabulary, the conformance checklist, and the output format into one file.
+
+> **What do I upload with my prompt?** Just one file: **`resources/ollama/context-pack.md`**.
+> Attach it (or paste it), then paste your text with a mode word — `CHECK`, `CORRECT`, or
+> `AUTHOR`. You do **not** upload the 30 separate files; the pack is the whole guide,
+> flattened.
+
+**Simplest one-off workflow (Open WebUI):**
+
+1. `ollama pull qwen2.5:14b` *(or any capable instruction model — 8B works, 14B+ is better)*.
+2. Start a chat, **attach `resources/ollama/context-pack.md`**.
+3. Paste your text with a mode word, e.g.:
+   > `CORRECT` mode, per the attached style guide pack. Rewrite the overview paragraph below;
+   > list what you changed; flag missing facts with `<TO SUPPLY>`, don't invent them.
+   >
+   > *[paste your paragraph]*
+
+**Simplest recurring workflow (upload nothing per prompt):** bake the pack into a custom
+model once — either as an Open WebUI "Model" with the pack attached as knowledge, or with the
+generator one-liner that builds a self-contained `ad-style` model. Both are in
+[`docs/using-with-ollama.md`](docs/using-with-ollama.md), along with model recommendations,
+a short [system prompt](resources/ollama/system-prompt.md), a
+[`Modelfile`](resources/ollama/Modelfile), and troubleshooting.
+
+**Check your model first.** Local models vary; run the one-minute
+[`evals/ollama-smoke-test.md`](evals/ollama-smoke-test.md) — four tiny cases with obvious
+answers — to see whether yours is reliable enough before trusting it on real documents.
+
+*Local models are great for fast, private, paragraph-level Check/Correct. For whole-document
+conformance across many files, or scoring against the [evals](evals/), use a file-reading
+agent (Claude Code) — same rules, longer reach.*
 
 ## A note on authority
 
