@@ -1,0 +1,328 @@
+# style-rules.yaml
+# Lint-style rules for checking AD prose against this guide. Each rule pairs a machine
+# check (a regex, or a heuristic an LLM agent applies) with the remediation it implies.
+# Together with substitutions.yaml these are the agent's review pass.
+#
+# Rule fields:
+#   id           stable identifier (cite it in findings, e.g. AD-VOC-002)
+#   title        short name
+#   severity     error | warning | info
+#   scope        line | sentence | section | document
+#   chapter      the guide chapter that states the rule
+#   detect       how to find a violation:
+#                  regex: <pattern>            mechanical, language-agnostic
+#                  heuristic: <instruction>    requires the agent to read and judge
+#   message      what to tell the user when it fires
+#   fix          the correction to apply or propose
+#
+# Regexes are PCRE-style, case-insensitive unless noted. They are deliberately
+# conservative (favour precision over recall) to keep false positives low; the heuristic
+# rules catch what regex cannot.
+
+rules:
+
+  # ---- Vocabulary -----------------------------------------------------------
+  - id: AD-VOC-001
+    title: Deprecated 42010 term
+    severity: error
+    scope: line
+    chapter: "03-vocabulary §3.2"
+    detect:
+      regex: "\\b(system[s]? of interest|architecture framework[s]?|architecture model[s]?|correspondence rule[s]?)\\b"
+    message: "Deprecated 2011 term. Use the 2022 term (see substitutions.yaml)."
+    fix: "Replace with the canonical 2022 term: entity of interest / architecture description framework / view component / correspondence method."
+
+  - id: AD-VOC-002
+    title: View/viewpoint likely swapped
+    severity: warning
+    scope: sentence
+    chapter: "03-vocabulary §3.3"
+    detect:
+      heuristic: "A sentence calls something a 'view' but describes reusable conventions, OR calls something a 'viewpoint' but describes the applied result for this specific EoI. Test: reusable conventions => viewpoint; specific applied result => view."
+    message: "'view' and 'viewpoint' may be swapped. A viewpoint is conventions (the lens); a view is the applied result."
+    fix: "Use 'architecture viewpoint' for conventions that frame concerns; 'architecture view' for the result governed by a viewpoint."
+
+  - id: AD-VOC-003
+    title: Undefined 'model' as an AD element
+    severity: warning
+    scope: sentence
+    chapter: "03-vocabulary §3.4 / glossary"
+    detect:
+      heuristic: "Prose refers to 'a model' / 'the model' as a stand-alone AD element. Only 'model kind' is defined; the part of a view is a 'view component'."
+    message: "'model' is not a defined AD element. Use 'view component' (the part) governed by a 'model kind' (the category)."
+    fix: "Recast as a view component governed by the relevant model kind."
+
+  - id: AD-VOC-004
+    title: Defined term over-capitalized
+    severity: info
+    scope: line
+    chapter: "03-vocabulary §3.5"
+    detect:
+      regex: "\\b(the )?(Viewpoint|View|Stakeholder|Concern|Aspect|Architecture|Model Kind|View Component)\\b"
+    message: "Defined terms are lowercase in running text (except sentence start / heading)."
+    fix: "Lowercase the defined term unless it begins a sentence or heading."
+
+  - id: AD-VOC-005
+    title: Abbreviation not expanded on first use
+    severity: warning
+    scope: document
+    chapter: "03-vocabulary §3.6"
+    detect:
+      heuristic: "An abbreviation (AD, ADF, ADL, EoI, or an EoI-local one) is used before it is expanded once as 'full form (ABBR)'."
+    message: "Expand each abbreviation on first use, then use the short form."
+    fix: "Insert the expansion at first occurrence: 'architecture description (AD)'."
+
+  # ---- Voice & register -----------------------------------------------------
+  - id: AD-VOICE-001
+    title: First person
+    severity: error
+    scope: sentence
+    chapter: "02-voice §2.1"
+    detect:
+      regex: "\\b(we|we're|we've|our|ours|us|i'm|i've)\\b|(^|[\\s\"'(])I\\s"
+    message: "An AD is spoken impersonally by the description; no first person."
+    fix: "Recast as a statement about the architecture, or record as an architecture decision (6.10)."
+
+  - id: AD-VOICE-002
+    title: Second person / reader address
+    severity: error
+    scope: sentence
+    chapter: "02-voice §2.1"
+    detect:
+      regex: "\\b(you|your|you're|you'll|you can see|as you|note that you)\\b"
+    message: "An AD does not address the reader as 'you'."
+    fix: "State the fact in the third person about the EoI or an AD element."
+
+  - id: AD-VOICE-003
+    title: Tool / self-production reference
+    severity: warning
+    scope: sentence
+    chapter: "02-voice §2.1"
+    detect:
+      regex: "\\b(this (section|document) (was|is) (generated|written|produced)|in this section we will|this document will now)\\b"
+    message: "An AD does not narrate how it was produced or what it 'will now' do."
+    fix: "Delete the self-reference; state the architectural content directly."
+
+  - id: AD-VOICE-004
+    title: Rhetorical question
+    severity: warning
+    scope: sentence
+    chapter: "02-voice §2.3"
+    detect:
+      regex: "\\?\\s*$"
+    message: "An AD asserts; it does not pose rhetorical questions."
+    fix: "Recast the question as a declarative statement (questions are acceptable only inside a quoted requirement or stakeholder concern)."
+
+  # ---- Normative force ------------------------------------------------------
+  - id: AD-NORM-001
+    title: Non-standard normative word
+    severity: error
+    scope: sentence
+    chapter: "02-voice §2.4 / 04-expression §4.2"
+    detect:
+      regex: "\\b(must|must not|need to|needs to|has to|have to|is required to|are required to)\\b"
+    message: "Normative force rides only on shall/should/may. 'must' etc. are not 42010 verbal forms."
+    fix: "If a requirement, use 'shall' / 'shall not'. If not, rewrite as a plain factual statement."
+
+  - id: AD-NORM-002
+    title: Diluted or inflated normative force
+    severity: error
+    scope: sentence
+    chapter: "04-expression §4.2"
+    detect:
+      regex: "\\b(shall ideally|should always|must absolutely|shall try to|should try to|is required to try)\\b"
+    message: "Do not weaken or strengthen a verbal form with adverbs."
+    fix: "A requirement is 'shall'; a recommendation is 'should'; choose one and drop the adverb."
+
+  - id: AD-NORM-003
+    title: Importance/emphasis used as obligation
+    severity: warning
+    scope: sentence
+    chapter: "02-voice §2.4"
+    detect:
+      regex: "\\b(it is (critical|essential|vital|imperative|crucial) that|critically important)\\b"
+    message: "Emphasis is not normative force. If it is a requirement, state it as 'shall'."
+    fix: "Rewrite as a 'shall' requirement on the responsible AD element, or state the fact plainly."
+
+  - id: AD-NORM-004
+    title: Multiple obligations in one sentence
+    severity: info
+    scope: sentence
+    chapter: "04-expression §4.2"
+    detect:
+      heuristic: "A single sentence contains more than one 'shall' (or shall + should), joining separate obligations."
+    message: "One verbal form per normative sentence so each requirement is individually traceable."
+    fix: "Split into one sentence per requirement."
+
+  # ---- Register: hype, hedges, fillers ---------------------------------------
+  - id: AD-REG-001
+    title: Hype / marketing adjective
+    severity: warning
+    scope: line
+    chapter: "02-voice §2.5"
+    detect:
+      regex: "\\b(robust|seamless|powerful|cutting[- ]edge|world[- ]class|best[- ]in[- ]class|state[- ]of[- ]the[- ]art|next[- ]generation|blazing|lightning[- ]fast)\\b"
+    message: "Quality claim with no fact behind it."
+    fix: "State the property and its evidence (limits, tolerated failures, measured numbers), or delete."
+
+  - id: AD-REG-002
+    title: Vague intensifier / filler
+    severity: warning
+    scope: line
+    chapter: "02-voice §2.5"
+    detect:
+      regex: "\\b(very|really|quite|extremely|highly|simply|obviously|of course|basically|essentially|arguably|kind of|sort of)\\b"
+    message: "Vague intensifier or conversational filler erodes the single voice."
+    fix: "Delete it, or replace with a concrete quantity."
+
+  - id: AD-REG-003
+    title: Empty opener
+    severity: warning
+    scope: sentence
+    chapter: "02-voice §2.5 / 04-expression"
+    detect:
+      regex: "^\\s*(it should be noted that|it is important to (note|understand) that|it is worth noting that|as mentioned (above|earlier)|in order to)\\b"
+    message: "Empty opener adds no content."
+    fix: "Delete the opener and state the fact; replace 'in order to' with 'to'."
+
+  - id: AD-REG-004
+    title: Hype verb
+    severity: info
+    scope: line
+    chapter: "03-vocabulary §3.8"
+    detect:
+      regex: "\\b(leverage[sd]?|utiliz[es]+d?|synerg)\\w*\\b"
+    message: "Prefer the plain verb."
+    fix: "'leverage'/'utilize' -> 'use'; rewrite 'synergy' concretely."
+
+  - id: AD-REG-005
+    title: Vague quantifier where a number is knowable
+    severity: info
+    scope: sentence
+    chapter: "04-expression §4.6"
+    detect:
+      regex: "\\b(a number of|several|many|various|some|a few)\\b"
+    message: "Give the count, range, or 'each/all/none' when it is knowable."
+    fix: "Replace with the actual quantity or an explicit bound."
+
+  # ---- Expression -----------------------------------------------------------
+  - id: AD-EXP-001
+    title: Agentless passive
+    severity: warning
+    scope: sentence
+    chapter: "04-expression §4.1"
+    detect:
+      heuristic: "A sentence uses passive voice ('is performed', 'are handled', 'is processed') without naming the AD element that acts."
+    message: "Agentless passive hides which element acts; the actor is architecturally significant."
+    fix: "Name the actor and use the active voice: 'The gateway authenticates the request.'"
+
+  - id: AD-EXP-002
+    title: Over-long sentence
+    severity: info
+    scope: sentence
+    chapter: "04-expression §4.1"
+    detect:
+      heuristic: "Sentence exceeds ~30 words or joins multiple obligation-bearing clauses with 'and'."
+    message: "Long sentence carrying multiple ideas reduces precision."
+    fix: "Split into one assertion per sentence."
+
+  - id: AD-EXP-003
+    title: Definition not in genus-differentia form
+    severity: warning
+    scope: sentence
+    chapter: "04-expression §4.3"
+    detect:
+      heuristic: "An EoI-local term is defined as 'X is a/the ...' or by example only, rather than as a noun phrase (genus + differentia, no leading article, no terminal period)."
+    message: "Definitions follow the standard's form so local definitions sit continuously with it."
+    fix: "Rewrite as a noun phrase: 'settlement window — interval during which matched trades are cleared and recorded'."
+
+  - id: AD-EXP-004
+    title: Non-parallel list items
+    severity: info
+    scope: section
+    chapter: "04-expression §4.4"
+    detect:
+      heuristic: "List items are not grammatically parallel (mix of noun phrases, sentences, and verb phrases) or do not complete the lead-in."
+    message: "List items must be parallel and complete the lead-in."
+    fix: "Make every item the same grammatical form."
+
+  - id: AD-EXP-005
+    title: Positional cross-reference
+    severity: warning
+    scope: sentence
+    chapter: "04-expression §4.5"
+    detect:
+      regex: "\\b(the (figure|table|section|diagram|view|viewpoint) (above|below|earlier|here)|as (shown|described) (above|below))\\b"
+    message: "Reference AD elements by identifier and name, not by position."
+    fix: "Cite the identifier and name, e.g. 'the security viewpoint (VP-SEC)'."
+
+  - id: AD-EXP-006
+    title: Unquantified capacity/limit
+    severity: info
+    scope: sentence
+    chapter: "04-expression §4.6"
+    detect:
+      heuristic: "A capacity, latency, retention, or limit is gestured at without a number or bound ('for a while', 'a lot of', 'high throughput')."
+    message: "State quantities; do not gesture at them."
+    fix: "Give the number, range, or explicit bound and its unit."
+
+  # ---- Conformance / content (document scope) -------------------------------
+  - id: AD-CONF-001
+    title: Missing required content section
+    severity: error
+    scope: document
+    chapter: "05-document-structure / 01-foundations §1.6"
+    detect:
+      heuristic: "A document claiming to be a conforming AD omits one of the Clause-6 required items: identification & overview, stakeholders, stakeholder perspectives, concerns, aspects, viewpoints, views, view components, correspondences (incl. known inconsistencies & methods), decisions & rationale."
+    message: "A conforming AD must address every Clause-6 required content item."
+    fix: "Add the missing section, or, for a focused document, state explicitly which required items are not addressed."
+
+  - id: AD-CONF-002
+    title: Concern not framed by any viewpoint
+    severity: error
+    scope: document
+    chapter: "05-document-structure §5.3"
+    detect:
+      heuristic: "A concern identified in the concerns section is not framed by any viewpoint in the viewpoints section."
+    message: "Every identified concern shall be framed by at least one architecture viewpoint."
+    fix: "Add a viewpoint that frames the concern, or remove the concern if it is not architecturally significant."
+
+  - id: AD-CONF-003
+    title: Decision without rationale
+    severity: error
+    scope: document
+    chapter: "05-document-structure §5.2 / 6.10"
+    detect:
+      heuristic: "An architecture decision is recorded without accompanying rationale (alternatives, basis, consequences)."
+    message: "Every architecture decision requires recorded rationale (6.10.2)."
+    fix: "Add the rationale: alternatives considered, basis for the choice, consequences accepted."
+
+  - id: AD-CONF-004
+    title: View without a single governing viewpoint
+    severity: error
+    scope: document
+    chapter: "05-document-structure §5.3"
+    detect:
+      heuristic: "An architecture view does not name exactly one governing viewpoint, or names none."
+    message: "Every architecture view is governed by exactly one viewpoint."
+    fix: "Name the single governing viewpoint for the view."
+
+  - id: AD-CONF-005
+    title: View component without model kind or legend
+    severity: warning
+    scope: document
+    chapter: "05-document-structure §5.3 / 6.8"
+    detect:
+      heuristic: "A view component (or architecturally significant figure) states neither the model kind that governs it nor a legend documenting its conventions."
+    message: "Every view component is governed by a model kind or documented by a legend."
+    fix: "State the governing model kind (model-based) or supply a legend (non-model-based)."
+
+  - id: AD-CONF-006
+    title: Known inconsistencies omitted
+    severity: warning
+    scope: document
+    chapter: "05-document-structure §5.2 / 6.9.1"
+    detect:
+      heuristic: "The correspondences section records no statement about known inconsistencies among AD elements."
+    message: "Known inconsistencies shall be recorded; silence is not conformance."
+    fix: "Record known inconsistencies, or state explicitly that none are known."
