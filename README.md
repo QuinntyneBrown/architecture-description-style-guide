@@ -91,6 +91,123 @@ truth for words; apply [`resources/data/style-rules.yaml`](resources/data/style-
 and the checklists as your review pass; and report findings in the format the agent
 instructions define. When in doubt about a word, the glossary and term bank win.
 
+## Practical usage — driving an agent with the guide
+
+You do **not** upload the guide each time. A coding agent (Claude Code in the web IDE, an
+IDE extension, or the CLI) works against a **repository**, so the reliable pattern is:
+*make the guide readable in the repo, then point the agent at one entry file* —
+[`agents/AGENT-INSTRUCTIONS.md`](agents/AGENT-INSTRUCTIONS.md). The agent loads the term
+bank, substitutions, rules, and checklists itself, exactly as that file instructs.
+
+### Getting the guide in front of the agent
+
+**If your document lives in this repo** (or you add this repo's files to your project):
+nothing to upload — the agent reads the files directly. This is the recommended setup.
+
+**If your document lives in a different project**, make the guide available, easiest first:
+
+1. **Copy the essentials in.** Add these to your project: `agents/AGENT-INSTRUCTIONS.md`,
+   `resources/data/terminology.yaml`, `resources/data/substitutions.yaml`,
+   `resources/data/style-rules.yaml`, and the checklist(s) you want
+   (`checklists/prose-checklist.md`, and `conformance-checklist.md` for whole documents).
+2. **Add this repo as a subfolder or git submodule** of your project.
+3. **Paste as a fallback.** If you cannot add files, paste
+   [`checklists/prose-checklist.md`](checklists/prose-checklist.md) and the deprecated-terms
+   table from [`docs/glossary.md`](docs/glossary.md) into the chat with your text. This
+   works but is heavier — you re-paste every time, and the agent cannot consult the full
+   rules — so prefer (1) or (2).
+
+> **In the web IDE specifically:** the agent operates on the connected GitHub repo. Put the
+> guide files in that repo (setups 1–2 above), open or paste your document, and prompt as
+> below. There is no separate "upload a checklist" step — referencing the files in the repo
+> is what replaces it.
+
+### Example 1 — Fix the overview paragraph of a document *(the common case)*
+
+This is the scenario most people start with. Mode: **Correct**.
+
+Prompt to the agent:
+
+> Using the style guide in this repo, start from `agents/AGENT-INSTRUCTIONS.md` and run
+> **Correct mode** on the overview paragraph below. Apply all error-severity fixes, apply
+> warnings unless context forbids it, list every change by rule id, and flag any missing
+> fact with `<TO SUPPLY>` rather than inventing it. Return the rewritten paragraph plus the
+> change list.
+>
+> ```
+> We built a really robust, world-class settlement platform that leverages an event-driven
+> design. The system of interest must process trades quickly, and as you can see it scales
+> very well.
+> ```
+
+What you get back (shape, per `AGENT-INSTRUCTIONS.md §5`):
+
+> **Rewritten:**
+> "The architecture is an event-driven settlement platform. The entity of interest settles
+> trades within `<TO SUPPLY: latency target>`."
+>
+> **Changes:**
+> ```
+> AD-VOICE-001 [error]   "We built"            — first person; stated impersonally.
+> AD-VOC-001   [error]   "system of interest"  — deprecated; "entity of interest".
+> AD-NORM-001  [error]   "must process"        — requirement: "shall settle … within <target>".
+> AD-REG-001   [warning] "robust, world-class" — hype with no fact; removed.
+> AD-REG-002   [warning] "really … very well"  — intensifiers; removed.
+> AD-VOICE-002 [error]   "as you can see"       — reader address; removed.
+> AD-REG-004   [info]    "leverages"           — "uses" (here: "event-driven design").
+> ```
+> *Flagged:* the latency target was asserted vaguely ("quickly") and is left as `<TO SUPPLY>`.
+
+Note the agent does **not** guess a latency number — it flags the gap. That is the correct
+behaviour (`AGENT-INSTRUCTIONS.md §6`).
+
+### Example 2 — Check a paragraph without changing it
+
+Mode: **Check**. Use this to see findings before deciding what to edit.
+
+> Using the style guide (`agents/AGENT-INSTRUCTIONS.md`), run **Check mode** on the text
+> below — report findings as `rule-id [severity] location — "text" — fix`, but do not edit.
+> [paste text]
+
+### Example 3 — Write a new section from facts
+
+Mode: **Author**. Supply the facts; the agent writes in the single voice.
+
+> Using the style guide, **Author** the Concerns (§4) section of an AD. Stakeholders:
+> operators (SH-01), the data protection officer (SH-03). Concerns: ingest throughput
+> (operators); personal-data retention (SH-03). The retention period is undecided. Use the
+> template in `resources/templates/architecture-description-template.md`, write in the
+> guide's voice, and mark anything undecided `<TO SUPPLY>` — do not invent values.
+
+### Example 4 — Review a whole document for conformance and voice
+
+Mode: **Check** + the checklists.
+
+> Using the style guide, review `docs/architecture-description.md` against
+> `checklists/conformance-checklist.md` and `checklists/prose-checklist.md`. Produce a
+> conformance table (each Clause-6 item present / partial / absent) and a findings list, then
+> a one-line verdict.
+
+### Example 5 — Make a set of documents sound like one author
+
+Mode: **Review** across files.
+
+> Using the style guide and `checklists/review-checklist.md`, review these documents
+> together for single-voice consistency: [list the files]. Report term drift, register
+> drift, and citation-style differences across them, and give the review verdict.
+
+### Tips for reliable results
+
+- **Always name the entry file** — "start from `agents/AGENT-INSTRUCTIONS.md`" — so the
+  agent loads the rules instead of relying on memory.
+- **State the mode** — Check, Correct, or Author. They produce different outputs.
+- **Tell it not to fabricate.** The instruction to flag gaps with `<TO SUPPLY>` is built into
+  the guide, but restating it in the prompt is cheap insurance.
+- **Trust the term bank over the agent's intuition** — if a fix looks wrong, check it against
+  [`docs/glossary.md`](docs/glossary.md); the glossary and standard govern.
+- **Iterate in Correct mode** — ask the agent to re-run Check on its own output until no
+  error-severity findings remain.
+
 ## A note on authority
 
 This guide is a **house style**; it is not the standard and does not replace it. Where it
